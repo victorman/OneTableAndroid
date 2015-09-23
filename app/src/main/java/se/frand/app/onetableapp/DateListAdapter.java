@@ -42,6 +42,7 @@ public class DateListAdapter extends ParseQueryAdapter<ParseObject> {
             public ParseQuery<ParseObject> create() {
                 ParseQuery query = new ParseQuery("Note");
                 query.whereExists("note");
+                query.orderByDescending("note");
                 return query;
             }
         });
