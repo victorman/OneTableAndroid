@@ -2,46 +2,45 @@ package se.frand.app.onetableapp;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ContentValues;
 import android.content.DialogInterface;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.ListView;
+
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQueryAdapter;
+import com.parse.SaveCallback;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import se.frand.app.onetableapp.data.MyContract;
-import se.frand.app.onetableapp.data.MyDBHelper;
 
 
 public class MainActivity extends Activity {
 
-    static final int COL_DATETIME_ID = 0;
-    static final int COL_DATETIME_CREATED = 1;
-    static final int COL_DATETIME_NOTE = 2;
 
     private final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    private MyDBHelper mDbHelper;
-
-    DateListAdapter mAdapter;
     ListView mList;
+
+    ParseQueryAdapter<ParseObject> adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        mDbHelper = new MyDBHelper(this);
-
-        mAdapter = new DateListAdapter(this, getLogTimes(mDbHelper.getReadableDatabase()));
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        adapter = new DateListAdapter(this);
+
         mList = (ListView) findViewById(R.id.dates_list_view);
-        mList.setAdapter(mAdapter);
+        mList.setAdapter(adapter); // set parse adapter
+        adapter.loadObjects();
     }
 
+    // create the action bar
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -78,13 +77,10 @@ public class MainActivity extends Activity {
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-               long newId = logDate(input.getText().toString());
-                //redraw the list now.
-                if(newId != -1) {
-                    mAdapter.swapCursor(getLogTimes(mDbHelper.getReadableDatabase()));
-                }
+                logDate(input.getText().toString());
             }
         });
+
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -96,42 +92,16 @@ public class MainActivity extends Activity {
     }
 
     private long logDate(String note) {
-        // Gets the data repository in write mode
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
-        // Create a new map of values, where column names are the keys
-        ContentValues values = new ContentValues();
-        values.put(MyContract.DateEntry.COLUMN_NAME_CREATED, System.currentTimeMillis());
-        values.put(MyContract.DateEntry.COLUMN_NAME_NOTE, note);
-
-        long newId = db.insert(
-                MyContract.DateEntry.TABLE_NAME,
-                null,
-                values);
-
-        //db.close();
-        return newId;
-    }
-
-    protected static Cursor getLogTimes(SQLiteDatabase db){
-        String[] projection = {
-                MyContract.DateEntry._ID,
-                MyContract.DateEntry.COLUMN_NAME_CREATED,
-                MyContract.DateEntry.COLUMN_NAME_NOTE
-        };
-        String sortOrder = MyContract.DateEntry.COLUMN_NAME_CREATED + " DESC";
-
-        Cursor c = db.query(
-                MyContract.DateEntry.TABLE_NAME,  // The table to query
-                projection,                               // The columns to return
-                null,                                // The columns for the WHERE clause
-                null,                            // The values for the WHERE clause
-                null,                                     // don't group the rows
-                null,                                     // don't filter by row groups
-                sortOrder                                 // The sort order
-        );
-        //db.close();
-        return c;
+        ParseObject object = new ParseObject("Note");
+        object.put(DateListAdapter.COLUMN_NAME_NOTE,note);
+        object.saveInBackground(new SaveCallback() {
+            @Override
+            public void done(ParseException e) {
+                adapter.loadObjects();
+            }
+        });
+        return 0;
     }
 
 

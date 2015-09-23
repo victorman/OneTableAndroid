@@ -1,22 +1,28 @@
 package se.frand.app.onetableapp;
 
+import android.app.AlertDialog;
 import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.view.LayoutInflater;
+import android.content.DialogInterface;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CursorAdapter;
 import android.widget.TextView;
 
-import se.frand.app.onetableapp.data.MyContract;
-import se.frand.app.onetableapp.data.MyDBHelper;
+import com.parse.DeleteCallback;
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+import com.parse.ParseQueryAdapter;
 
 /**
  * Created by victorfrandsen on 9/15/15.
  */
-public class DateListAdapter extends CursorAdapter {
+public class DateListAdapter extends ParseQueryAdapter<ParseObject> {
+    private final String LOG_TAG = DateListAdapter.class.getSimpleName();
+
+    public static final String COLUMN_NAME_ID = "objectId";
+    public static final String COLUMN_NAME_CREATED = "createdAt";
+    public static final String COLUMN_NAME_NOTE = "note";
 
     public static class ViewHolder {
         public final TextView dateView;
@@ -30,26 +36,26 @@ public class DateListAdapter extends CursorAdapter {
         }
     }
 
-    public DateListAdapter(Context context, Cursor c) {
-        super(context,c,0);
+    public DateListAdapter(Context context) {
+        super(context,new ParseQueryAdapter.QueryFactory<ParseObject>() {
+            @Override
+            public ParseQuery<ParseObject> create() {
+                ParseQuery query = new ParseQuery("Note");
+                query.whereExists("note");
+                return query;
+            }
+        });
     }
 
     @Override
-    public View newView(Context context, Cursor cursor, ViewGroup parent) {
-        View view = LayoutInflater.from(context).inflate(R.layout.list_item_selected_layout, parent, false);
-
-        ViewHolder viewHolder = new ViewHolder(view);
-        view.setTag(viewHolder);
-
-        return view;
-    }
-
-    @Override
-    public void bindView(View view, final Context context, final Cursor cursor) {
-        ViewHolder viewHolder = (ViewHolder) view.getTag();
+    public View getItemView(final ParseObject object, View v, ViewGroup parent) {
+        if (v == null) {
+            v = View.inflate(getContext(), R.layout.list_item_selected_layout, null);
+        }
+        ViewHolder viewHolder = new ViewHolder(v);
 
         viewHolder.dateView.setText(MainActivity.getDate(
-                cursor.getLong(MainActivity.COL_DATETIME_CREATED),
+                object.getLong(COLUMN_NAME_CREATED),
                 "h:mm a M/d"
         ));
 
@@ -57,18 +63,39 @@ public class DateListAdapter extends CursorAdapter {
         viewHolder.deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SQLiteDatabase db = context.openOrCreateDatabase(
-                        MyDBHelper.DATABASE_NAME,
-                        Context.MODE_PRIVATE,
-                        null
-                );
-                String where = MyContract.DateEntry.COLUMN_NAME_ID + "=?";
-                String[] args = {""+cursor.getInt(MainActivity.COL_DATETIME_ID)};
-                db.delete(MyContract.DateEntry.TABLE_NAME, where, args);
-                swapCursor(MainActivity.getLogTimes(db));
+                newDialog(object);
             }
         });
 
-        viewHolder.noteView.setText(cursor.getString(MainActivity.COL_DATETIME_NOTE));
+        viewHolder.noteView.setText(object.getString(COLUMN_NAME_NOTE));
+        return v;
+    }
+
+
+    private void newDialog(final ParseObject object) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Delete this note?");
+
+        // Set up the buttons
+        builder.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //delete
+                object.deleteInBackground(new DeleteCallback() {
+                    @Override
+                    public void done(ParseException e) {
+                        loadObjects();
+                    }
+                });
+            }
+        });
+        builder.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
     }
 }
