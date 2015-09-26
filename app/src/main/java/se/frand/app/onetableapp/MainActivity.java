@@ -3,17 +3,20 @@ package se.frand.app.onetableapp;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.ListView;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+
 import se.frand.app.onetableapp.data.MyContract;
 import se.frand.app.onetableapp.data.MyDBHelper;
 
@@ -35,7 +38,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         mDbHelper = new MyDBHelper(this);
 
-        mAdapter = new DateListAdapter(this, getLogTimes(mDbHelper.getReadableDatabase()));
+        mAdapter = new DateListAdapter(this, getLogTimes(this));
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mList = (ListView) findViewById(R.id.dates_list_view);
@@ -78,10 +81,10 @@ public class MainActivity extends Activity {
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-               long newId = logDate(input.getText().toString());
+               Uri newUri = logDate(input.getText().toString());
                 //redraw the list now.
-                if(newId != -1) {
-                    mAdapter.swapCursor(getLogTimes(mDbHelper.getReadableDatabase()));
+                if(newUri != null) {
+                    mAdapter.swapCursor(getLogTimes(getApplicationContext()));
                 }
             }
         });
@@ -95,42 +98,36 @@ public class MainActivity extends Activity {
         builder.show();
     }
 
-    private long logDate(String note) {
-        // Gets the data repository in write mode
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+    private Uri logDate(String note) {
 
         // Create a new map of values, where column names are the keys
         ContentValues values = new ContentValues();
-        values.put(MyContract.DateEntry.COLUMN_NAME_CREATED, System.currentTimeMillis());
-        values.put(MyContract.DateEntry.COLUMN_NAME_NOTE, note);
+        values.put(MyContract.NoteEntry.COLUMN_NAME_CREATED, System.currentTimeMillis());
+        values.put(MyContract.NoteEntry.COLUMN_NAME_NOTE, note);
 
-        long newId = db.insert(
-                MyContract.DateEntry.TABLE_NAME,
-                null,
+        Uri newUri = this.getContentResolver().insert(
+                MyContract.NoteEntry.CONTENT_URI,
                 values);
 
         //db.close();
-        return newId;
+        return newUri;
     }
 
-    protected static Cursor getLogTimes(SQLiteDatabase db){
+    protected static Cursor getLogTimes(Context context){
         String[] projection = {
-                MyContract.DateEntry._ID,
-                MyContract.DateEntry.COLUMN_NAME_CREATED,
-                MyContract.DateEntry.COLUMN_NAME_NOTE
+                MyContract.NoteEntry._ID,
+                MyContract.NoteEntry.COLUMN_NAME_CREATED,
+                MyContract.NoteEntry.COLUMN_NAME_NOTE
         };
-        String sortOrder = MyContract.DateEntry.COLUMN_NAME_CREATED + " DESC";
+        String sortOrder = MyContract.NoteEntry.COLUMN_NAME_CREATED + " DESC";
 
-        Cursor c = db.query(
-                MyContract.DateEntry.TABLE_NAME,  // The table to query
+        Cursor c = context.getContentResolver().query(
+                MyContract.NoteEntry.CONTENT_URI,  // The table to query
                 projection,                               // The columns to return
                 null,                                // The columns for the WHERE clause
                 null,                            // The values for the WHERE clause
-                null,                                     // don't group the rows
-                null,                                     // don't filter by row groups
-                sortOrder                                 // The sort order
+                sortOrder                               // The sort order
         );
-        //db.close();
         return c;
     }
 

@@ -9,7 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 public class MyDBHelper extends SQLiteOpenHelper {
     // If you change the database schema, you must increment the database version.
-    public static final int DATABASE_VERSION = 2;
+    public static final int DATABASE_VERSION = 1;
     public static final String DATABASE_NAME = "My.db";
 
     public MyDBHelper(Context context) {
@@ -32,12 +32,12 @@ public class MyDBHelper extends SQLiteOpenHelper {
     private static final String INT_TYPE = " INTEGER";
     private static final String C = ",";
     private static final String SQL_CREATE_ENTRIES =
-            "CREATE TABLE " + MyContract.DateEntry.TABLE_NAME + " (" +
-                    MyContract.DateEntry._ID + INT_TYPE + " PRIMARY KEY AUTOINCREMENT," +
-                    MyContract.DateEntry.COLUMN_NAME_CREATED + INT_TYPE + C +
-                    MyContract.DateEntry.COLUMN_NAME_NOTE + TEXT_TYPE +
+            "CREATE TABLE " + MyContract.NoteEntry.TABLE_NAME + " (" +
+                    MyContract.NoteEntry._ID + INT_TYPE + " PRIMARY KEY AUTOINCREMENT," +
+                    MyContract.NoteEntry.COLUMN_NAME_CREATED + INT_TYPE + C +
+                    MyContract.NoteEntry.COLUMN_NAME_NOTE + TEXT_TYPE +
                     " )";
 
     private static final String SQL_DELETE_ENTRIES =
-            "DROP TABLE IF EXISTS " + MyContract.DateEntry.TABLE_NAME;
+            "DROP TABLE IF EXISTS " + MyContract.NoteEntry.TABLE_NAME;
 }

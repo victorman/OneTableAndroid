@@ -2,7 +2,6 @@ package se.frand.app.onetableapp;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,22 +10,26 @@ import android.widget.CursorAdapter;
 import android.widget.TextView;
 
 import se.frand.app.onetableapp.data.MyContract;
-import se.frand.app.onetableapp.data.MyDBHelper;
 
 /**
- * Created by victorfrandsen on 9/15/15.
+ * Created by victorfrandsen on 9/25/15.
  */
 public class DateListAdapter extends CursorAdapter {
+
+
+    private static final String LOG_TAG = DateListAdapter.class.getSimpleName() ;
 
     public static class ViewHolder {
         public final TextView dateView;
         public final TextView noteView;
         public final Button deleteButton;
+        public final TextView invisibleView;
 
         public ViewHolder(View view) {
             dateView = (TextView) view.findViewById(R.id.item_date);
             noteView = (TextView) view.findViewById(R.id.item_note);
             deleteButton = (Button) view.findViewById(R.id.item_delete_button);
+            invisibleView = (TextView) view.findViewById(R.id.note_id);
         }
     }
 
@@ -45,7 +48,7 @@ public class DateListAdapter extends CursorAdapter {
     }
 
     @Override
-    public void bindView(View view, final Context context, final Cursor cursor) {
+    public void bindView(final View view, final Context context, final Cursor cursor) {
         ViewHolder viewHolder = (ViewHolder) view.getTag();
 
         viewHolder.dateView.setText(MainActivity.getDate(
@@ -57,18 +60,17 @@ public class DateListAdapter extends CursorAdapter {
         viewHolder.deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SQLiteDatabase db = context.openOrCreateDatabase(
-                        MyDBHelper.DATABASE_NAME,
-                        Context.MODE_PRIVATE,
-                        null
-                );
-                String where = MyContract.DateEntry.COLUMN_NAME_ID + "=?";
-                String[] args = {""+cursor.getInt(MainActivity.COL_DATETIME_ID)};
-                db.delete(MyContract.DateEntry.TABLE_NAME, where, args);
-                swapCursor(MainActivity.getLogTimes(db));
+
+                String where = MyContract.NoteEntry.COLUMN_NAME_ID + "=?";
+
+                String[] args = new String[] { ""+((TextView)view.findViewById(R.id.note_id)).getText()};
+
+                context.getContentResolver().delete(MyContract.NoteEntry.CONTENT_URI, where, args);
+                swapCursor(MainActivity.getLogTimes(context));
             }
         });
 
         viewHolder.noteView.setText(cursor.getString(MainActivity.COL_DATETIME_NOTE));
+        viewHolder.invisibleView.setText(cursor.getString(MainActivity.COL_DATETIME_ID));
     }
 }
