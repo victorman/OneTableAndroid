@@ -1,9 +1,10 @@
 package se.frand.app.onetableapp;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,13 +14,15 @@ import android.widget.ListView;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQueryAdapter;
+import com.parse.ParseUser;
 import com.parse.SaveCallback;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends ActionBarActivity {
 
 
     private final String LOG_TAG = MainActivity.class.getSimpleName();
@@ -33,7 +36,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        adapter = new DateListAdapter(this);
+        adapter = new NoteListAdapter(this);
 
         mList = (ListView) findViewById(R.id.dates_list_view);
         mList.setAdapter(adapter); // set parse adapter
@@ -58,6 +61,13 @@ public class MainActivity extends Activity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_new) {
             newDialog();
+            return true;
+        } else if (id == R.id.action_logout) {
+            ParseUser.logOut();
+
+            Intent intent = new Intent(MainActivity.this, DispatchActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -92,9 +102,10 @@ public class MainActivity extends Activity {
     }
 
     private long logDate(String note) {
-
-        ParseObject object = new ParseObject("Note");
-        object.put(DateListAdapter.COLUMN_NAME_NOTE,note);
+        ParseUser user = ParseUser.getCurrentUser();
+        ParseObject object = new ParseObject(NoteListAdapter.TABLE_NAME);
+        object.put(NoteListAdapter.COLUMN_NAME_NOTE, note);
+        object.put(NoteListAdapter.COLUMN_NAME_USER, user);
         object.saveInBackground(new SaveCallback() {
             @Override
             public void done(ParseException e) {
@@ -116,6 +127,17 @@ public class MainActivity extends Activity {
         // Create a calendar object that will convert the date and time value in milliseconds to date.
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(milliSeconds);
+        return formatter.format(calendar.getTime());
+    }
+
+    public static String getDate(Date date, String dateFormat)
+    {
+        // Create a DateFormatter object for displaying date in specified format.
+        SimpleDateFormat formatter = new SimpleDateFormat(dateFormat);
+
+        // Create a calendar object that will convert the date and time value in milliseconds to date.
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(date.getTime());
         return formatter.format(calendar.getTime());
     }
 }

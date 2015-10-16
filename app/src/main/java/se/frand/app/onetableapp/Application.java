@@ -9,6 +9,9 @@ public class Application extends android.app.Application {
         Parse.initialize(this,
                 getString(R.string.parse_app_id),
                 getString(R.string.parse_client_key));
+
+
+        super.onCreate();
     }
 
 

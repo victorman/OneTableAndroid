@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "22.0.1"
+    compileSdkVersion 23
+    buildToolsVersion "23.0.1"
 
     dexOptions {
         preDexLibraries = false
@@ -11,10 +11,9 @@ android {
     defaultConfig {
         applicationId "se.frand.app.onetableapp"
         minSdkVersion 22
-        targetSdkVersion 22
+        targetSdkVersion 23
         versionCode 1
         versionName "1.0"
-        multiDexEnabled = false
     }
     lintOptions {
         abortOnError false
@@ -23,19 +22,14 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
 
 dependencies {
     //compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.parse.bolts:bolts-android:1.+'
-
-    // Module dependency on ParseLoginUI library sources
     compile project(':ParseLoginUI')
-
-    // Uncomment if using Facebook Login (optional Maven dependency)
-    // compile 'com.facebook.android:facebook-android-sdk:4.0.1'
-    // compile files('YOUR_PROJECT_LIBS_PATH/ParseFacebookUtilsV4-1.10.0.jar')
+    compile 'com.android.support:appcompat-v7:23.0.1'
+    compile 'com.android.support:design:23.0.1'
 }
